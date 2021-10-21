@@ -601,14 +601,12 @@ checkInstallation() {
 }
 
 progressBar() {
-    echo $COLUMNS
     progress=$1
     total=$2
     cols=$COLUMNS
     cols=$(( $cols-5 ))
     cols_done=$(( ($progress*$cols)/$total ))
     cols_empty=$(( $cols-$cols_done ))
-    echo $cols
     echo -n "["
     for i in $(seq $cols_done); do echo -n "#"; done
     for i in $(seq $cols_empty); do echo -n "-"; done
