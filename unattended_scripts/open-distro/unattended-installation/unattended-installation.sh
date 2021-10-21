@@ -180,7 +180,7 @@ installPrerequisites() {
     logger "Installing all necessary utilities for the installation..."
 
     if [ ${sys_type} == "yum" ]; then
-        eval "yum install curl unzip wget libcap -y ${debug}"
+        eval "unbuffer yum install curl unzip wget libcap -y ${debug}"
     elif [ ${sys_type} == "zypper" ]; then
         eval "zypper -n install curl unzip wget ${debug}"         
         eval "zypper -n install libcap-progs ${debug} || zypper -n install libcap2 ${debug}"
@@ -244,7 +244,7 @@ installElasticsearch() {
     logger "Installing Open Distro for Elasticsearch..."
 
     if [ ${sys_type} == "yum" ]; then
-        eval "yum install opendistroforelasticsearch-${OD_VER}-${OD_REV} -y ${debug}"
+        eval "unbuffer yum install opendistroforelasticsearch-${OD_VER}-${OD_REV} -y ${debug}"
     elif [ ${sys_type} == "zypper" ]; then
         eval "zypper -n install opendistroforelasticsearch=${OD_VER}-${OD_REV} ${debug}"
     elif [ ${sys_type} == "apt-get" ]; then
