@@ -603,7 +603,7 @@ checkInstallation() {
 progressBar() {
     progress=$1
     total=$2
-    cols=$COLUMNS
+    cols=$(tput cols)
     cols=$(( $cols-5 ))
     cols_done=$(( ($progress*$cols) / $total ))
     cols_empty=$(( $cols-$cols_done ))
