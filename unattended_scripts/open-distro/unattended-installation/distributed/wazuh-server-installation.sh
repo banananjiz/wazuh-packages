@@ -97,6 +97,7 @@ checkConfig() {
     if [ -f ~/certs.tar ]
     then
         echo "Certificates file found. Starting the installation..."
+	progressBar
         eval "tar --overwrite -C ~/ -xf ~/certs.tar config.yml ${debug}"
     else
         echo "No certificates file found."
@@ -109,6 +110,7 @@ checkConfig() {
 installPrerequisites() {
 
     logger "Installing all necessary utilities for the installation..."
+    progressBar
 
     if [ ${sys_type} == "yum" ]
     then
@@ -135,6 +137,7 @@ installPrerequisites() {
 ## Add the Wazuh repository
 addWazuhrepo() {
     logger "Adding the Wazuh repository..."
+    progressBar
 
     if [ ${sys_type} == "yum" ]
     then
@@ -158,6 +161,7 @@ addWazuhrepo() {
 installWazuh() {
 
     logger "Installing the Wazuh manager..."
+    progressBar
     if [ ${sys_type} == "zypper" ]; then
         eval "zypper -n install wazuh-manager-${WAZUH_VER}-${WAZUH_REV} ${debug}"
     else
@@ -179,10 +183,13 @@ installFilebeat() {
 
     if [[ -f /etc/filebeat/filebeat.yml ]]; then
         echo "Filebeat is already installed in this node."
+	progressBar ## this one is for the installation
+	progressBar ## and this one for the configuration
         exit 1;
     fi
 
     logger "Installing Filebeat..."
+    progressBar
     
     if [ ${sys_type} == "zypper" ]; then
         eval "zypper -n install filebeat-${ELK_VER} ${debug}"
@@ -202,6 +209,9 @@ installFilebeat() {
 }
 
 configureFilebeat() {
+
+    logger "Configuring filebeat..."
+    progressBar
 
     nh=$(awk -v RS='' '/network.host:/' ~/config.yml)
 
@@ -250,23 +260,25 @@ healthCheck() {
         exit 1;
     else
         echo "Starting the installation..."
+	progressBar
     fi
 }
 
 ## Progress Bar Utility
 progressBar() {
-    progress=$1
-    total=$2
+    if [ -z ${progress} ]; then 
+            progress=1
+    fi
     cols=$(tput cols)
     cols=$(( $cols-5 ))
-    cols_done=$(( ($progress*$cols) / $total ))
+    cols_done=$(( ($progress*$cols) / $progressbartotal ))
     cols_empty=$(( $cols-$cols_done ))
     echo -n "["
     for i in $(seq $cols_done); do echo -n "#"; done
     for i in $(seq $cols_empty); do echo -n "-"; done
-    echo "]${progress}/${total}"
+    echo "]${progress}/${progressbartotal}"
+    progress=$(( $progress+1 )) 
 }
-
 
 
 ## Main
@@ -318,22 +330,17 @@ main() {
         if [ -n "${ignore}" ]
         then
             echo "Health-check ignored."
-
+	    progressbartotal=6
         else
+	    progressbartotal=7
             healthCheck
         fi
         checkConfig
-	progressBar 1 6
         installPrerequisites
-	progressBar 2 6
         addWazuhrepo
-	progressBar 3 6
         installWazuh
-	progressBar 4 6
         installFilebeat iname
-	progressBar 5 6
         configureFilebeat
-	progressBar 6 6
     else
         getHelp
     fi

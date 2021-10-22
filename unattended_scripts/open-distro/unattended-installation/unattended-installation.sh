@@ -238,6 +238,8 @@ installWazuh() {
         wazuhinstalled="1"
         logger "Done"
     fi   
+    logger "Starting Wazuh manager"
+    progressBar
     startService "wazuh-manager"
 
 }
@@ -684,10 +686,10 @@ main() {
         
         if [ -n "${ignore}" ]; then
             echo "Health-check ignored." 
-	    progressbartotal=7   
+	    progressbartotal=8   
             checkInstalled
         else
-	    progressbartotal=8
+	    progressbartotal=9
             checkInstalled
             healthCheck           
         fi
@@ -699,7 +701,7 @@ main() {
         installKibana
         checkInstallation  
     else
-	progressbartotal=8
+	progressbartotal=9
         checkInstalled 
         healthCheck 
         installPrerequisites

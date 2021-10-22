@@ -100,14 +100,17 @@ checkConfig() {
 
     if [ -f ~/config.yml ]; then
         echo "Configuration file found. Starting the installation..."
+	progressBar
     else
         if [ -f ~/certs.tar ]; then
             echo "Certificates file found. Starting the installation..."
+	    progressBar
             eval "tar --overwrite -C ~/ -xf ~/certs.tar config.yml ${debug}"
         elif [ -f /etc/elasticsearch/certs/certs.tar ]; then
             eval "mv /etc/elasticsearch/certs/certs.tar ~/ ${debug}"
             eval "tar --overwrite -C ~/ -xf ~/certs.tar config.yml ${debug}"
             echo "Certificates file found. Starting the installation..."
+	    progressBar
         else
             echo "No configuration file found."
             exit 1;
@@ -121,6 +124,7 @@ checkConfig() {
 installPrerequisites() {
 
     logger "Installing all necessary utilities for the installation..."
+    progressBar
 
     if [ ${sys_type} == "yum" ]; then
         eval "yum install curl unzip wget libcap -y -q ${debug}"
@@ -191,6 +195,7 @@ installPrerequisites() {
 ## Add the Wazuh repository
 addWazuhrepo() {
     logger "Adding the Wazuh repository..."
+    progresBar
 
     if [ ${sys_type} == "yum" ]; then
         eval "rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH ${debug}"
@@ -211,6 +216,7 @@ installElasticsearch() {
 
     if [[ -f /etc/elasticsearch/elasticsearch.yml ]]; then
         echo "Open Distro for Elasticsearch is already installed in this node."
+	progressBar
         exit 1;
     fi
 
@@ -231,6 +237,7 @@ installElasticsearch() {
         logger "Done"
 
         logger "Configuring Elasticsearch..."
+	progressBar
 
         eval "curl -so /etc/elasticsearch/elasticsearch.yml https://packages.wazuh.com/resources/${WAZUH_MAJOR}/open-distro/unattended-installation/distributed/templates/elasticsearch_unattended.yml --max-time 300 ${debug}"
         eval "curl -so /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/roles.yml https://packages.wazuh.com/resources/${WAZUH_MAJOR}/open-distro/elasticsearch/roles/roles.yml --max-time 300 ${debug}"
@@ -437,10 +444,12 @@ installKibana() {
 
     if [[ -f /etc/kibana/kibana.yml ]]; then
         echo "Kibana is already installed in this node."
+	progressBar
         exit 1;
     fi
 
     logger "Installing Kibana..."
+    progressBar
     if [ ${sys_type} == "zypper" ]; then
         eval "zypper -n install opendistroforelasticsearch-kibana-${OD_VER} ${debug}"
     else
@@ -566,10 +575,28 @@ healthCheck() {
             exit 1;
         else
             echo "Starting the installation..."
+	    progresBar
         fi
     fi
 
 }
+
+## Progress bar utility
+progressBar() {
+    if [ -z ${progress} ]; then
+            progress=1
+    fi
+    cols=$(tput cols)
+    cols=$(( $cols-5 ))
+    cols_done=$(( ($progress*$cols) / $progressbartotal ))
+    cols_empty=$(( $cols-$cols_done ))
+    echo -n "["
+    for i in $(seq $cols_done); do echo -n "#"; done
+    for i in $(seq $cols_empty); do echo -n "-"; done
+    echo "]${progress}/${progressbartotal}"
+    progress=$(( $progress+1 ))
+}
+
 
 ## Main
 
@@ -639,7 +666,9 @@ main() {
 
             if [ -n "${ignore}" ]; then
                 echo "Health-check ignored."
+		progressbartotal=5
             else
+		progressbartotal=6
                 healthCheck elastic
             fi
             checkConfig
@@ -652,7 +681,9 @@ main() {
 
             if [ -n "${ignore}" ]; then
                 echo "Health-check ignored."
+		progressbartotal=4
             else
+		progressbartotal=5
                 healthCheck kibana
             fi
             checkConfig
