@@ -513,19 +513,28 @@ checkInstalled() {
 
 overwrite() {  
     rollBack
+    progressbartotal=7
     addWazuhrepo
     installPrerequisites
     if [ -n "${wazuhinstalled}" ]; then
         installWazuh
+    else
+	progressBar
     fi
     if [ -n "${elasticinstalled}" ]; then
         installElasticsearch
+    else
+	progressBar
     fi    
     if [ -n "${filebeatinstalled}" ]; then
         installFilebeat
+    else 
+        progressBar
     fi
     if [ -n "${kibanainstalled}" ]; then
         installKibana
+    else
+	progressBar
     fi    
     checkInstallation
 }
