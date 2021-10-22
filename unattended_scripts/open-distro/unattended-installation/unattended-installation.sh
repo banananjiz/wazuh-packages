@@ -605,7 +605,7 @@ progressBar() {
     total=$2
     cols=$COLUMNS
     cols=$(( $cols-5 ))
-    cols_done=$(( ($progress*$cols)/$total ))
+    cols_done=$(( ($progress*$cols) / $total ))
     cols_empty=$(( $cols-$cols_done ))
     echo -n "["
     for i in $(seq $cols_done); do echo -n "#"; done
