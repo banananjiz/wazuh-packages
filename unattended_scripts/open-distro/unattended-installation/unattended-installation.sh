@@ -178,6 +178,7 @@ getHelp() {
 ## Install the required packages for the installation
 installPrerequisites() {
     logger "Installing all necessary utilities for the installation..."
+    progressBar
 
     if [ ${sys_type} == "yum" ]; then
         eval "yum install curl unzip wget libcap -y ${debug}"
@@ -201,6 +202,7 @@ installPrerequisites() {
 ## Add the Wazuh repository
 addWazuhrepo() {
     logger "Adding the Wazuh repository..."
+    progressBar
 
     if [ ${sys_type} == "yum" ]; then
         eval "rpm --import ${repogpg} ${debug}"
@@ -221,6 +223,8 @@ addWazuhrepo() {
 installWazuh() {
     
     logger "Installing the Wazuh manager..."
+    progressBar
+
     if [ ${sys_type} == "zypper" ]; then
         eval "zypper -n install wazuh-manager=${WAZUH_VER}-${WAZUH_REV} ${debug}"
     else
@@ -242,6 +246,7 @@ installWazuh() {
 installElasticsearch() {
 
     logger "Installing Open Distro for Elasticsearch..."
+    progressBar
 
     if [ ${sys_type} == "yum" ]; then
         eval "yum install opendistroforelasticsearch-${OD_VER}-${OD_REV} -y ${debug}"
@@ -306,6 +311,7 @@ installElasticsearch() {
         eval "cp ~/certs/admin* /etc/elasticsearch/certs/ ${debug}"
         
         # Configure JVM options for Elasticsearch
+	progressbartotal=7	
         ram_gb=$(free -g | awk '/^Mem:/{print $2}')
         ram=$(( ${ram_gb} / 2 ))
 
@@ -336,6 +342,7 @@ installElasticsearch() {
 installFilebeat() {
     
     logger "Installing Filebeat..."
+    progressBar
     
     if [ ${sys_type} == "zypper" ]; then
         eval "zypper -n install filebeat=${ELK_VER} ${debug}"
@@ -368,6 +375,8 @@ installFilebeat() {
 installKibana() {
     
     logger "Installing Open Distro for Kibana..."
+    progressBar
+
     if [ ${sys_type} == "zypper" ]; then
         eval "zypper -n install opendistroforelasticsearch-kibana=${OD_VER} ${debug}"
     else
@@ -417,6 +426,8 @@ checkFlavor() {
 }
 
 checkInstalled() {
+    
+    progressBar
     
     if [ "${sys_type}" == "yum" ]; then
         wazuhinstalled=$(yum list installed 2>/dev/null | grep wazuh-manager)
@@ -505,20 +516,26 @@ checkInstalled() {
 overwrite() {  
     rollBack
     addWazuhrepo
+    progressBar 1 6
     installPrerequisites
     if [ -n "${wazuhinstalled}" ]; then
         installWazuh
     fi
+    progressBar 2 6
     if [ -n "${elasticinstalled}" ]; then
         installElasticsearch
     fi    
+    progressBar 3 6
     if [ -n "${filebeatinstalled}" ]; then
         installFilebeat
     fi
+    progressBar 4 6
     if [ -n "${kibanainstalled}" ]; then
         installKibana
     fi    
-    checkInstallation     
+    progressBar 5 6
+    checkInstallation
+    progressBar 6 6    
 }
 
 networkCheck() {
@@ -545,6 +562,7 @@ healthCheck() {
         exit 1;
     else
         echo "Starting the installation..."
+	progressBar
     fi
 
 }
@@ -572,6 +590,7 @@ checkInstallation() {
     ra="  password: "
     wazuhpass="${wazuhpass//$ra}"
     logger "Checking the installation..."
+    progressBar
     eval "curl -XGET https://localhost:9200 -uwazuh:${wazuhpass} -k --max-time 300 ${debug}"
     if [  "$?" != 0  ]; then
         echo "Error: Elasticsearch was not successfully installed."
@@ -601,16 +620,15 @@ checkInstallation() {
 }
 
 progressBar() {
-    progress=$1
-    total=$2
     cols=$(tput cols)
     cols=$(( $cols-5 ))
-    cols_done=$(( ($progress*$cols) / $total ))
+    cols_done=$(( ($progress*$cols) / $progressbartotal ))
     cols_empty=$(( $cols-$cols_done ))
     echo -n "["
     for i in $(seq $cols_done); do echo -n "#"; done
     for i in $(seq $cols_empty); do echo -n "-"; done
     echo "]${progress}/${total}"
+    progress=$(( $progress+1 )) 
 }
 
 main() {
@@ -661,45 +679,32 @@ main() {
         fi        
         
         if [ -n "${ignore}" ]; then
-            echo "Health-check ignored."    
+            echo "Health-check ignored." 
+	    progressbartotal=7   
             checkInstalled
         else
+	    progressbartotal=8
             checkInstalled
             healthCheck           
-        fi            
+        fi
         installPrerequisites
-	progressBar 1 7
 	addWazuhrepo
-	progressBar 2 7
         installWazuh
-	progressBar 3 7
         installElasticsearch
-	progressBar 4 7
         installFilebeat
-	progressBar 5 7
         installKibana
-	progressBar 6 7
         checkInstallation  
-	progressBar 7 7  
     else
+	progressbartotal=8
         checkInstalled 
-	progressBar 1 9 
         healthCheck 
-	progressBar 2 9  
         installPrerequisites
-	progressBar 3 9
         addWazuhrepo
-	progressBar 4 9
         installWazuh
-	progressBar 5 9
         installElasticsearch
-	progressBar 6 9
         installFilebeat
-	progressBar 7 9
         installKibana
-	progressBar 8 9
         checkInstallation  
-	progressBar 9 9
     fi
 
 }

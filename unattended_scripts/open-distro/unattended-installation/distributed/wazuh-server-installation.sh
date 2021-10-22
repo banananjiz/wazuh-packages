@@ -253,6 +253,22 @@ healthCheck() {
     fi
 }
 
+## Progress Bar Utility
+progressBar() {
+    progress=$1
+    total=$2
+    cols=$(tput cols)
+    cols=$(( $cols-5 ))
+    cols_done=$(( ($progress*$cols) / $total ))
+    cols_empty=$(( $cols-$cols_done ))
+    echo -n "["
+    for i in $(seq $cols_done); do echo -n "#"; done
+    for i in $(seq $cols_empty); do echo -n "-"; done
+    echo "]${progress}/${total}"
+}
+
+
+
 ## Main
 
 main() {
@@ -307,11 +323,17 @@ main() {
             healthCheck
         fi
         checkConfig
+	progressBar 1 6
         installPrerequisites
+	progressBar 2 6
         addWazuhrepo
+	progressBar 3 6
         installWazuh
+	progressBar 4 6
         installFilebeat iname
+	progressBar 5 6
         configureFilebeat
+	progressBar 6 6
     else
         getHelp
     fi
