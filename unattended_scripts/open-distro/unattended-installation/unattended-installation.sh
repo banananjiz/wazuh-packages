@@ -627,7 +627,7 @@ progressBar() {
     echo -n "["
     for i in $(seq $cols_done); do echo -n "#"; done
     for i in $(seq $cols_empty); do echo -n "-"; done
-    echo "]${progress}/${total}"
+    echo "]${progress}/${progressbartotal}"
     progress=$(( $progress+1 )) 
 }
 
