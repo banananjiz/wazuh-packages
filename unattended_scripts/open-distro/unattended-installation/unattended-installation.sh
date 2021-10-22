@@ -667,7 +667,6 @@ main() {
             checkInstalled
             healthCheck           
         fi            
-	progressBar 0 7
         installPrerequisites
 	progressBar 1 7
 	addWazuhrepo
@@ -683,7 +682,6 @@ main() {
         checkInstallation  
 	progressBar 7 7  
     else
-	progressBar 0 9
         checkInstalled 
 	progressBar 1 9 
         healthCheck 
