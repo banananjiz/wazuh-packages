@@ -427,8 +427,6 @@ checkFlavor() {
 
 checkInstalled() {
     
-    progressBar
-    
     if [ "${sys_type}" == "yum" ]; then
         wazuhinstalled=$(yum list installed 2>/dev/null | grep wazuh-manager)
     elif [ "${sys_type}" == "zypper" ]; then
