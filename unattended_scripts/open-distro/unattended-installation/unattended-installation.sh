@@ -516,26 +516,20 @@ checkInstalled() {
 overwrite() {  
     rollBack
     addWazuhrepo
-    progressBar 1 6
     installPrerequisites
     if [ -n "${wazuhinstalled}" ]; then
         installWazuh
     fi
-    progressBar 2 6
     if [ -n "${elasticinstalled}" ]; then
         installElasticsearch
     fi    
-    progressBar 3 6
     if [ -n "${filebeatinstalled}" ]; then
         installFilebeat
     fi
-    progressBar 4 6
     if [ -n "${kibanainstalled}" ]; then
         installKibana
     fi    
-    progressBar 5 6
     checkInstallation
-    progressBar 6 6    
 }
 
 networkCheck() {
@@ -620,6 +614,9 @@ checkInstallation() {
 }
 
 progressBar() {
+    if [ -z ${progress} ]; then 
+	    progress=1
+    fi
     cols=$(tput cols)
     cols=$(( $cols-5 ))
     cols_done=$(( ($progress*$cols) / $progressbartotal ))
