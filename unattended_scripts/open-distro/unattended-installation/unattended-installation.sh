@@ -644,7 +644,7 @@ progressBar() {
 	    progress=1
     fi
     cols=$(tput cols)
-    cols=$(( $cols-5 ))
+    cols=$(( $cols-7 ))
     cols_done=$(( ($progress*$cols) / $progressbartotal ))
     cols_empty=$(( $cols-$cols_done ))
     echo -n "["
