@@ -531,7 +531,7 @@ checkInstalled() {
 
 overwrite() {  
     rollBack
-    progressbartotal=7
+    progressbartotal=14
     addWazuhrepo
     installPrerequisites
     if [ -n "${wazuhinstalled}" ]; then
@@ -555,6 +555,7 @@ overwrite() {
 	progressBar
     fi    
     checkInstallation
+    progressBar
 }
 
 networkCheck() {
@@ -702,10 +703,10 @@ main() {
         
         if [ -n "${ignore}" ]; then
             echo "Health-check ignored." 
-	    progressbartotal=15  
+	    progressbartotal=16  
             checkInstalled
         else
-	    progressbartotal=16
+	    progressbartotal=17
             checkInstalled
             healthCheck           
         fi
@@ -715,9 +716,10 @@ main() {
         installElasticsearch
         installFilebeat
         installKibana
-        checkInstallation  
+        checkInstallation
+        progressBar	
     else
-	progressbartotal=16
+	progressbartotal=17
         checkInstalled 
         healthCheck 
         installPrerequisites
@@ -727,6 +729,7 @@ main() {
         installFilebeat
         installKibana
         checkInstallation  
+	progressBar
     fi
 
 }
