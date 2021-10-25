@@ -238,7 +238,7 @@ installWazuh() {
         wazuhinstalled="1"
         logger "Done"
     fi   
-    logger "Starting Wazuh manager"
+    logger "Starting Wazuh manager..."
     progressBar
     startService "wazuh-manager"
 
@@ -267,6 +267,7 @@ installElasticsearch() {
         logger "Done"
 
         logger "Configuring Elasticsearch..."
+	progressBar
 
         eval "curl -so /etc/elasticsearch/elasticsearch.yml ${resources}/open-distro/elasticsearch/7.x/elasticsearch_unattended.yml --max-time 300 ${debug}"
         eval "curl -so /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/roles.yml ${resources}/open-distro/elasticsearch/roles/roles.yml --max-time 300 ${debug}"
@@ -274,7 +275,11 @@ installElasticsearch() {
         eval "curl -so /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/internal_users.yml ${resources}/open-distro/elasticsearch/roles/internal_users.yml --max-time 300 ${debug}"        
         eval "rm /etc/elasticsearch/esnode-key.pem /etc/elasticsearch/esnode.pem /etc/elasticsearch/kirk-key.pem /etc/elasticsearch/kirk.pem /etc/elasticsearch/root-ca.pem -f ${debug}"
 
+
         ## Create certificates
+	logger "Creating Certificates..."
+	progressBar
+
         eval "mkdir /etc/elasticsearch/certs ${debug}"
         eval "cd /etc/elasticsearch/certs ${debug}"
         echo "${resources}/open-distro/tools/certificate-utility/wazuh-cert-tool.sh --max-time 300"
@@ -324,9 +329,16 @@ installElasticsearch() {
         eval "sed -i "s/-Xmx1g/-Xmx${ram}g/" /etc/elasticsearch/jvm.options ${debug}"
      
         eval "/usr/share/elasticsearch/bin/elasticsearch-plugin remove opendistro-performance-analyzer ${debug}"
-        # Start Elasticsearch
+        
+	# Start Elasticsearch
+	logger "Starting elasticsearch..."
+	progressBar
         startService "elasticsearch"
+
+
         echo "Initializing Elasticsearch..."
+	progressBar
+
         until $(curl -XGET https://localhost:9200/ -uadmin:admin -k --max-time 120 --silent --output /dev/null); do
             echo -ne ${char}
             sleep 10
@@ -366,6 +378,8 @@ installFilebeat() {
         eval "cp ~/certs/filebeat* /etc/filebeat/certs/ ${debug}"
 
         # Start Filebeat
+	logger "Starting Filebeat..."
+	progressBar
         startService "filebeat"
 
         logger "Done"
@@ -410,6 +424,8 @@ installKibana() {
         eval "setcap 'cap_net_bind_service=+ep' /usr/share/kibana/node/bin/node ${debug}"
 
         # Start Kibana
+	logger "Starting Kibana..."
+	progressBar
         startService "kibana"
 
         logger "Done"
@@ -686,10 +702,10 @@ main() {
         
         if [ -n "${ignore}" ]; then
             echo "Health-check ignored." 
-	    progressbartotal=8   
+	    progressbartotal=15  
             checkInstalled
         else
-	    progressbartotal=9
+	    progressbartotal=16
             checkInstalled
             healthCheck           
         fi
@@ -701,7 +717,7 @@ main() {
         installKibana
         checkInstallation  
     else
-	progressbartotal=9
+	progressbartotal=16
         checkInstalled 
         healthCheck 
         installPrerequisites

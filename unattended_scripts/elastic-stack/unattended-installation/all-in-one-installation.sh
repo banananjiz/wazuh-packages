@@ -101,6 +101,7 @@ getHelp() {
 installPrerequisites() {
 
     logger "Installing all necessary utilities for the installation..."
+    progressBar
 
     if [ $sys_type == "yum" ]
     then
@@ -130,6 +131,7 @@ installPrerequisites() {
 addElasticrepo() {
 
     logger "Adding the Elasticsearch repository..."
+    progressBar
 
     if [ $sys_type == "yum" ]
     then
@@ -170,6 +172,7 @@ addElasticrepo() {
 addWazuhrepo() {
 
     logger "Adding the Wazuh repository..."
+    progressBar
 
     if [ $sys_type == "yum" ]
     then
@@ -209,6 +212,7 @@ addWazuhrepo() {
 installWazuh() {
 
     logger "Installing the Wazuh manager..."
+    progressBar
     if [ $sys_type == "zypper" ]
     then
         eval "zypper -n install wazuh-manager $debug"
@@ -230,6 +234,7 @@ installWazuh() {
 installElasticsearch() {
 
     logger "Installing Elasticsearch..."
+    progressBar
 
     if [ $sys_type == "yum" ]
     then
@@ -453,6 +458,23 @@ disableRepos() {
     fi
 }
 
+## Progress Bar Utility
+progressBar() {
+    if [ -z ${progress} ]; then
+            progress=1
+    fi
+    cols=$(tput cols)
+    cols=$(( $cols-5 ))
+    cols_done=$(( ($progress*$cols) / $progressbartotal ))
+    cols_empty=$(( $cols-$cols_done ))
+    echo -n "["
+    for i in $(seq $cols_done); do echo -n "#"; done
+    for i in $(seq $cols_empty); do echo -n "-"; done
+    echo "]${progress}/${progressbartotal}"
+    progress=$(( $progress+1 ))
+}
+
+
 main() {
 
     if [ -n "$1" ]
@@ -491,6 +513,7 @@ main() {
         if [ -n "$i" ]
         then
             echo "Health-check ignored."
+	    progressbartotal=8
         else
             healthCheck
         fi
