@@ -318,7 +318,6 @@ installElasticsearch() {
         eval "cp ~/certs/admin* /etc/elasticsearch/certs/ ${debug}"
         
         # Configure JVM options for Elasticsearch
-	progressbartotal=7	
         ram_gb=$(free -g | awk '/^Mem:/{print $2}')
         ram=$(( ${ram_gb} / 2 ))
 
