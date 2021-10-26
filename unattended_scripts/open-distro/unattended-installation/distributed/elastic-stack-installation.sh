@@ -195,7 +195,7 @@ installPrerequisites() {
 ## Add the Wazuh repository
 addWazuhrepo() {
     logger "Adding the Wazuh repository..."
-    progresBar
+    progressBar
 
     if [ ${sys_type} == "yum" ]; then
         eval "rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH ${debug}"
@@ -216,11 +216,11 @@ installElasticsearch() {
 
     if [[ -f /etc/elasticsearch/elasticsearch.yml ]]; then
         echo "Open Distro for Elasticsearch is already installed in this node."
-	progressBar
         exit 1;
     fi
 
     logger "Installing Open Distro for Elasticsearch..."
+    progressBar
 
     if [ ${sys_type} == "yum" ]; then
         eval "yum install opendistroforelasticsearch-${OD_VER}-${OD_REV} -y -q ${debug}"
@@ -325,6 +325,9 @@ installElasticsearch() {
         fi
 
         # Create certificates
+	logger "Creating Certificates..."
+	progressBar
+
         if [ -n "${single}" ]; then
             createCertificates name ip
         elif [ -n "${certificates}" ]; then
@@ -421,8 +424,10 @@ initializeElastic() {
 
     # Start Elasticsearch
     logger "Starting Elasticsearch..."
+    progressBar
     startService "elasticsearch"
     logger "Initializing Elasticsearch..."
+    progressBar
 
 
     until $(curl -XGET https://${nip}:9200/ -uadmin:admin -k --max-time 120 --silent --output /dev/null); do
@@ -444,7 +449,6 @@ installKibana() {
 
     if [[ -f /etc/kibana/kibana.yml ]]; then
         echo "Kibana is already installed in this node."
-	progressBar
         exit 1;
     fi
 
@@ -510,6 +514,9 @@ installKibana() {
 
 copyKibanacerts() {
 
+    logger "Copying Kibana certificates..."
+    progressBar
+
     if [[ -f "/etc/elasticsearch/certs/kibana_http.pem" ]] && [[ -f "/etc/elasticsearch/certs/kibana_http.key" ]]; then
         eval "mv /etc/elasticsearch/certs/kibana_http* /etc/kibana/certs/ ${debug}"
         eval "mv /etc/kibana/certs/kibana_http.key /etc/kibana/certs/kibana.key ${debug}"
@@ -532,12 +539,11 @@ copyKibanacerts() {
 initializeKibana() {
 
     # Start Kibana
+    logger "Starting Kibana..."
+    progressBar
     startService "kibana"
     logger "Initializing Kibana (this may take a while)"
-    until [[ "$(curl -XGET https://${kip}/status -I -uadmin:admin -k -s --max-time 300 | grep "200 OK")" ]]; do
-        echo -ne ${char}
-        sleep 10
-    done
+    progressBar
     wip=$(grep -A 1 "Wazuh-master-configuration" ~/config.yml | tail -1)
     rm="- "
     wip="${wip//$rm}"
@@ -568,6 +574,7 @@ healthCheck() {
             exit 1;
         else
             echo "Starting the installation..."
+	    progressBar
         fi
     elif [ -n "${kibana}" ]; then
         if [ ${cores} -lt 2 ] || [ ${ram_gb} -lt 3700 ]; then
@@ -575,26 +582,27 @@ healthCheck() {
             exit 1;
         else
             echo "Starting the installation..."
-	    progresBar
+	    progressBar
         fi
     fi
 
 }
 
-## Progress bar utility
+## Progress Bar Utility
 progressBar() {
-    if [ -z ${progress} ]; then
-            progress=1
+    if [ -z ${progress} ]; then 
+	    progress=1
     fi
     cols=$(tput cols)
-    cols=$(( $cols-5 ))
+    cols=$(( $cols-6 ))
     cols_done=$(( ($progress*$cols) / $progressbartotal ))
     cols_empty=$(( $cols-$cols_done ))
+    progresspercentage=$(( ($progress*100) / $progressbartotal ))
     echo -n "["
     for i in $(seq $cols_done); do echo -n "#"; done
     for i in $(seq $cols_empty); do echo -n "-"; done
-    echo "]${progress}/${progressbartotal}"
-    progress=$(( $progress+1 ))
+    printf "]%3.3s%%\n" ${progresspercentage}
+    progress=$(( $progress+1 )) 
 }
 
 
@@ -666,9 +674,9 @@ main() {
 
             if [ -n "${ignore}" ]; then
                 echo "Health-check ignored."
-		progressbartotal=5
+		progressbartotal=8
             else
-		progressbartotal=6
+		progressbartotal=9
                 healthCheck elastic
             fi
             checkConfig
@@ -681,9 +689,9 @@ main() {
 
             if [ -n "${ignore}" ]; then
                 echo "Health-check ignored."
-		progressbartotal=4
+		progressbartotal=6
             else
-		progressbartotal=5
+		progressbartotal=7
                 healthCheck kibana
             fi
             checkConfig

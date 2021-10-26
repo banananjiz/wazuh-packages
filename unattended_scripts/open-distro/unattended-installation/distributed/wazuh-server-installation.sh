@@ -162,6 +162,7 @@ installWazuh() {
 
     logger "Installing the Wazuh manager..."
     progressBar
+
     if [ ${sys_type} == "zypper" ]; then
         eval "zypper -n install wazuh-manager-${WAZUH_VER}-${WAZUH_REV} ${debug}"
     else
@@ -174,6 +175,8 @@ installWazuh() {
     else
         logger "Done"
     fi
+    logger "Starting Wazuh manager..."
+    progressBar
     startService "wazuh-manager"
 
 }
@@ -183,8 +186,6 @@ installFilebeat() {
 
     if [[ -f /etc/filebeat/filebeat.yml ]]; then
         echo "Filebeat is already installed in this node."
-	progressBar ## this one is for the installation
-	progressBar ## and this one for the configuration
         exit 1;
     fi
 
@@ -244,6 +245,7 @@ configureFilebeat() {
     fi
     logger "Done"
     echo "Starting Filebeat..."
+    progressBar
     eval "systemctl daemon-reload ${debug}"
     eval "systemctl enable filebeat.service ${debug}"
     eval "systemctl start filebeat.service ${debug}"
@@ -267,16 +269,17 @@ healthCheck() {
 ## Progress Bar Utility
 progressBar() {
     if [ -z ${progress} ]; then 
-            progress=1
+	    progress=1
     fi
     cols=$(tput cols)
-    cols=$(( $cols-5 ))
+    cols=$(( $cols-6 ))
     cols_done=$(( ($progress*$cols) / $progressbartotal ))
     cols_empty=$(( $cols-$cols_done ))
+    progresspercentage=$(( ($progress*100) / $progressbartotal ))
     echo -n "["
     for i in $(seq $cols_done); do echo -n "#"; done
     for i in $(seq $cols_empty); do echo -n "-"; done
-    echo "]${progress}/${progressbartotal}"
+    printf "]%3.3s%%\n" ${progresspercentage}
     progress=$(( $progress+1 )) 
 }
 
@@ -330,9 +333,9 @@ main() {
         if [ -n "${ignore}" ]
         then
             echo "Health-check ignored."
-	    progressbartotal=6
+	    progressbartotal=9
         else
-	    progressbartotal=7
+	    progressbartotal=10
             healthCheck
         fi
         checkConfig
@@ -341,6 +344,7 @@ main() {
         installWazuh
         installFilebeat iname
         configureFilebeat
+	progressBar
     else
         getHelp
     fi
