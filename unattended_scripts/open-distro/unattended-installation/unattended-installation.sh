@@ -530,7 +530,7 @@ checkInstalled() {
 
 overwrite() {  
     rollBack
-    progressbartotal=14
+    progressbartotal=17
     addWazuhrepo
     installPrerequisites
     if [ -n "${wazuhinstalled}" ]; then
@@ -554,7 +554,6 @@ overwrite() {
 	progressBar
     fi    
     checkInstallation
-    progressBar
 }
 
 networkCheck() {
@@ -604,6 +603,8 @@ changePasswords() {
 
 checkInstallation() {
 
+    logger "Changing Passwords"
+    progressBar    
     changePasswords
     wazuhpass=$(grep "password:" /etc/filebeat/filebeat.yml )
     ra="  password: "
@@ -627,11 +628,9 @@ checkInstallation() {
         echo "Filebeat installation succeeded."
     fi    
     logger "Initializing Kibana (this may take a while)"
-    until [[ "$(curl -XGET https://localhost/status -I -uwazuh:${wazuhpass} -k -s --max-time 300 | grep "200 OK")" ]]; do
-        echo -ne $char
-        sleep 10
-    done    
+    progressBar
     echo $'\nInstallation finished'
+    progressBar
     echo $'\nYou can access the web interface https://<kibana_ip>. The credentials are wazuh:'${wazuhpass}''
 
     exit 0;
@@ -643,13 +642,14 @@ progressBar() {
 	    progress=1
     fi
     cols=$(tput cols)
-    cols=$(( $cols-7 ))
+    cols=$(( $cols-6 ))
     cols_done=$(( ($progress*$cols) / $progressbartotal ))
     cols_empty=$(( $cols-$cols_done ))
+    progresspercentage=$(( ($progress*100) / $progressbartotal ))
     echo -n "["
     for i in $(seq $cols_done); do echo -n "#"; done
     for i in $(seq $cols_empty); do echo -n "-"; done
-    echo "]${progress}/${progressbartotal}"
+    printf "]%3.3s%%\n" ${progresspercentage}
     progress=$(( $progress+1 )) 
 }
 
@@ -702,10 +702,10 @@ main() {
         
         if [ -n "${ignore}" ]; then
             echo "Health-check ignored." 
-	    progressbartotal=16  
+	    progressbartotal=17  
             checkInstalled
         else
-	    progressbartotal=17
+	    progressbartotal=18
             checkInstalled
             healthCheck           
         fi
@@ -716,9 +716,8 @@ main() {
         installFilebeat
         installKibana
         checkInstallation
-        progressBar	
     else
-	progressbartotal=17
+	progressbartotal=18
         checkInstalled 
         healthCheck 
         installPrerequisites
@@ -728,7 +727,6 @@ main() {
         installFilebeat
         installKibana
         checkInstallation  
-	progressBar
     fi
 
 }
