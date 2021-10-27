@@ -637,6 +637,7 @@ checkInstallation() {
 
 }
 
+## Progress Bar Utility
 progressBar() {
     if [ -z ${progress} ]; then 
 	    progress=1
