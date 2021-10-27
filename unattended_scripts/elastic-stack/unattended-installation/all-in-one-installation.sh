@@ -226,6 +226,8 @@ installWazuh() {
     else
         logger "Done"
     fi
+    logger "Starting Wazuh Manager..."
+    progressBar
     startService "wazuh-manager"
 
 }
@@ -255,6 +257,7 @@ installElasticsearch() {
         logger "Done"
 
         logger "Configuring Elasticsearch..."
+	progressBar
 
         eval "curl -so /etc/elasticsearch/elasticsearch.yml https://packages.wazuh.com/resources/4.2/elastic-stack/elasticsearch/7.x/elasticsearch_all_in_one.yml --max-time 300 $debug"
         eval "curl -so /usr/share/elasticsearch/instances.yml https://packages.wazuh.com/resources/4.2/elastic-stack/instances_aio.yml --max-time 300 $debug"
@@ -284,14 +287,18 @@ installElasticsearch() {
         eval "sed -i "s/-Xmx1g/-Xmx${ram}g/" /etc/elasticsearch/jvm.options $debug"
 
         # Start Elasticsearch
+	logger "Starting elasticsearch..."
+	progressBar
         startService "elasticsearch"
         echo "Initializing Elasticsearch...(this may take a while)"
+	progressBar
         until grep '\Security is enabled' /var/log/elasticsearch/elasticsearch.log > /dev/null
         do
             echo -ne $char
             sleep 10
         done
         echo $'\nGenerating passwords...'
+	progressBar
         passwords=$(/usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto -b)
         password=$(echo $passwords | awk 'NF{print $NF; exit}')
         until $(curl -XGET https://localhost:9200/ -elastic:"$password" -k --max-time 120 --silent --output /dev/null); do
@@ -308,6 +315,7 @@ installElasticsearch() {
 installFilebeat() {
 
     logger "Installing Filebeat..."
+    progressBar
     if [ $sys_type == "yum" ]
     then
         eval "yum install filebeat-${ELK_VER} -y -q  $debug"    
@@ -334,6 +342,8 @@ installFilebeat() {
         conf="$(awk '{sub("<elasticsearch_password>", "'"${password}"'")}1' /etc/filebeat/filebeat.yml)"
         echo "$conf" > /etc/filebeat/filebeat.yml
         # Start Filebeat
+	logger "Starting Filebeat..."
+	progresBar
         startService "filebeat"
 
         logger "Done"
@@ -345,6 +355,7 @@ installFilebeat() {
 installKibana() {
 
     logger "Installing Kibana..."
+    progressBar
     if [ $sys_type == "yum" ]
     then
         eval "yum install kibana-${ELK_VER} -y -q  $debug"    
@@ -381,6 +392,8 @@ installKibana() {
         echo "$conf" > /etc/kibana/kibana.yml
 
         # Start Kibana
+	logger "Starting Kibana..."
+	progressBar
         startService "kibana"
 
         logger "Done"
@@ -403,6 +416,7 @@ healthCheck() {
         exit 1;    
     else
         echo "Starting the installation..."
+	progressBar
     fi
 
 }
@@ -410,6 +424,7 @@ healthCheck() {
 checkInstallation() {
 
     logger "Checking the installation..."
+    progressBar
     eval "curl -XGET https://localhost:9200 -elastic:"$password" -k --max-time 300 $debug"
     if [  "$?" != 0  ]
     then
@@ -427,14 +442,12 @@ checkInstallation() {
         echo "Filebeat installation succeeded."
     fi
     logger "Initializing Kibana (this may take a while)"
-    until [[ "$(curl -XGET https://localhost/status -I -uelastic:"$password" -k -s | grep "200 OK")" ]]; do
-        echo -ne $char
-        sleep 10
-    done
+    progressBar
     echo $'\nDuring the installation of Elasticsearch the passwords for its user were generated. Please take note of them:'
     echo "$passwords"
     echo $'\nInstallation finished'
     disableRepos
+    progressBar
     echo $'\nYou can access the web interface https://<kibana_ip>. The credentials are elastic:'$password''    
     exit 0;
 
@@ -460,18 +473,19 @@ disableRepos() {
 
 ## Progress Bar Utility
 progressBar() {
-    if [ -z ${progress} ]; then
-            progress=1
+    if [ -z ${progress} ]; then 
+	    progress=1
     fi
     cols=$(tput cols)
-    cols=$(( $cols-5 ))
+    cols=$(( $cols-6 ))
     cols_done=$(( ($progress*$cols) / $progressbartotal ))
     cols_empty=$(( $cols-$cols_done ))
+    progresspercentage=$(( ($progress*100) / $progressbartotal ))
     echo -n "["
     for i in $(seq $cols_done); do echo -n "#"; done
     for i in $(seq $cols_empty); do echo -n "-"; done
-    echo "]${progress}/${progressbartotal}"
-    progress=$(( $progress+1 ))
+    printf "]%3.3s%%\n" ${progresspercentage}
+    progress=$(( $progress+1 )) 
 }
 
 
@@ -513,8 +527,9 @@ main() {
         if [ -n "$i" ]
         then
             echo "Health-check ignored."
-	    progressbartotal=8
+	    progressbartotal=16
         else
+	    progressbartotal=17
             healthCheck
         fi
         installPrerequisites
@@ -526,6 +541,7 @@ main() {
         installKibana password
         checkInstallation
     else
+	progressBar
         healthCheck
         installPrerequisites
         addElasticrepo
