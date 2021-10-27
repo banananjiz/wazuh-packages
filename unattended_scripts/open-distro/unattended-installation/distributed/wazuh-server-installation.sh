@@ -344,6 +344,7 @@ main() {
         installWazuh
         installFilebeat iname
         configureFilebeat
+	logger "Installation finished"
 	progressBar
     else
         getHelp
