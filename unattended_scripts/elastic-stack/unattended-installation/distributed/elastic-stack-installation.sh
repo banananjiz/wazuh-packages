@@ -112,10 +112,12 @@ checkConfig() {
         if [ -f ~/config.yml ]
         then
             echo "Configuration file found. Starting the installation..."
+	    progressBar
         else
             if [ -f ~/certs.zip ]
             then
                 echo "Certificates file found. Starting the installation..."
+		progressBar
                 eval "unzip -o ~/certs.zip config.yml $debug"
             else
                 echo "No configuration file found."
@@ -128,6 +130,7 @@ checkConfig() {
         if [ -e ~/certs/${iname} ]
         then
             echo "Certificates file found. Starting the installation..."
+	    progressBar
         else
             echo "No certificates found."
             exit 1;
@@ -141,6 +144,7 @@ checkConfig() {
 installPrerequisites() {
 
     logger "Installing all necessary utilities for the installation..."
+    progressBar
 
     if [ $sys_type == "yum" ]
     then
@@ -173,6 +177,7 @@ installPrerequisites() {
 addElasticrepo() {
 
     logger "Adding the Elasticsearch repository..."
+    progressBar
 
     if [ $sys_type == "yum" ]
     then
@@ -218,6 +223,7 @@ installElasticsearch() {
     fi
 
     logger "Installing Elasticsearch..."
+    progressBar
 
     if [ $sys_type == "yum" ]
     then
@@ -238,6 +244,7 @@ installElasticsearch() {
         logger "Done"
 
         logger "Configuring Elasticsearch..."
+	progressBar
         eval "curl -so /etc/elasticsearch/elasticsearch.yml https://packages.wazuh.com/resources/4.2/elastic-stack/unattended-installation/distributed/templates/elasticsearch_unattended.yml --max-time 300 $debug"
 
         if [ -n "$single" ]
@@ -323,6 +330,9 @@ installElasticsearch() {
 
 createCertificates() {
 
+    logger "Creating certificates..."
+    progressBar
+
     if [ -n "$single" ]
     then
         echo "instances:" >> /usr/share/elasticsearch/instances.yml
@@ -386,16 +396,20 @@ initializeElastic() {
     logger "Elasticsearch installed."
 
     # Start Elasticsearch
+    logger "Starting Elasticsearch..."
+    progressBar
     startService "elasticsearch"
     if [ -n "$single" ]
     then
         echo "Initializing Elasticsearch...(this may take a while)"
+	progressBar
         until grep '\Security is enabled' /var/log/elasticsearch/elasticsearch.log > /dev/null
         do
             echo -ne $char
             sleep 10
         done
         echo $'\nGenerating passwords...'
+	progressBar
         passwords=$(/usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto -b)
         password=$(echo $passwords | awk 'NF{print $NF; exit}')
         elk=$(awk -F'network.host: ' '{print $2}' ~/config.yml | xargs)
@@ -409,6 +423,7 @@ initializeElastic() {
         echo "$passwords"
     fi
     echo $'\nElasticsearch installation finished'
+    progressBar
     disableRepos
     exit 0;
 
@@ -423,6 +438,7 @@ installKibana() {
     fi
 
     logger "Installing Kibana..."
+    progressBar
     if [ $sys_type == "yum" ]
     then
         eval "yum install kibana-${ELK_VER} -y -q  $debug"    
@@ -501,8 +517,11 @@ initializeKibana() {
     eval "chmod -R 500 /etc/kibana/certs $debug"
     eval "chmod 400 /etc/kibana/certs/ca/ca.* /etc/kibana/certs/kibana.* $debug"
     # Start Kibana
+    logger "Starting Kibana..."
+    progressBar
     startService "kibana"
     logger "Initializing Kibana (this may take a while)"
+    progressBar
     rms=" "
     kip="${kip//$rms}"
     until [[ "$(curl -XGET https://${kip}/status -I -uelastic:"$epassword" -k -s | grep "200 OK")" ]]; do
@@ -548,6 +567,7 @@ healthCheck() {
             exit 1;
         else
             echo "Starting the installation..."
+	    progressBar
         fi
     elif [ -n "$k" ]
     then
@@ -557,6 +577,7 @@ healthCheck() {
             exit 1;
         else
             echo "Starting the installation..."
+            progressBar
         fi
     fi
 
@@ -577,8 +598,25 @@ disableRepos() {
     fi
 }
 
-## Main
+## Progress Bar Utility
+progressBar() {
+    if [ -z ${progress} ]; then 
+	    progress=1
+    fi
+    cols=$(tput cols)
+    cols=$(( $cols-6 ))
+    cols_done=$(( ($progress*$cols) / $progressbartotal ))
+    cols_empty=$(( $cols-$cols_done ))
+    progresspercentage=$(( ($progress*100) / $progressbartotal ))
+    echo -n "["
+    for i in $(seq $cols_done); do echo -n "#"; done
+    for i in $(seq $cols_empty); do echo -n "-"; done
+    printf "]%3.3s%%\n" ${progresspercentage}
+    progress=$(( $progress+1 )) 
+}
 
+
+## Main
 main() {
 
     if [ -n "$1" ]
@@ -651,7 +689,9 @@ main() {
             if [ -n "$i" ]
             then
                 echo "Health-check ignored."
+		progressbartotal=10
             else
+		progressbartotal=11
                 healthCheck e k
             fi
             installPrerequisites
@@ -659,6 +699,7 @@ main() {
             checkNodes
             checkConfig iname
             installElasticsearch iname
+	    progressBar
         fi
         if [ -n "$k" ]
         then
@@ -674,12 +715,15 @@ main() {
             if [ -n "$i" ]
             then
                 echo "Health-check ignored."
+		progressbartotal=5
             else
                 healthCheck e k
+		progressbartotal=6
             fi
             installPrerequisites
             addElasticrepo
             installKibana iname
+	    progressBar
         fi
     else
         getHelp
