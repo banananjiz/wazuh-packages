@@ -544,6 +544,10 @@ initializeKibana() {
     startService "kibana"
     logger "Initializing Kibana (this may take a while)"
     progressBar
+    until [[ "$(curl -XGET https://${kip}/status -I -uadmin:admin -k -s --max-time 300 | grep "200 OK")" ]]; do
+        echo -ne ${char}
+        sleep 10
+    done
     wip=$(grep -A 1 "Wazuh-master-configuration" ~/config.yml | tail -1)
     rm="- "
     wip="${wip//$rm}"

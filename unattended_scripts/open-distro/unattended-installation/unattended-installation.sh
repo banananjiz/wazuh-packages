@@ -629,6 +629,10 @@ checkInstallation() {
     fi    
     logger "Initializing Kibana (this may take a while)"
     progressBar
+    until [[ "$(curl -XGET https://localhost/status -I -uwazuh:${wazuhpass} -k -s --max-time 300 | grep "200 OK")" ]]; do
+        echo -ne $char
+        sleep 10
+    done   
     echo $'\nInstallation finished'
     progressBar
     echo $'\nYou can access the web interface https://<kibana_ip>. The credentials are wazuh:'${wazuhpass}''

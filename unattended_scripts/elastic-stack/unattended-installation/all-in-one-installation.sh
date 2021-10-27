@@ -443,6 +443,10 @@ checkInstallation() {
     fi
     logger "Initializing Kibana (this may take a while)"
     progressBar
+    until [[ "$(curl -XGET https://localhost/status -I -uelastic:"$password" -k -s | grep "200 OK")" ]]; do
+	echo -ne $char
+	sleep 10
+    done
     echo $'\nDuring the installation of Elasticsearch the passwords for its user were generated. Please take note of them:'
     echo "$passwords"
     echo $'\nInstallation finished'
