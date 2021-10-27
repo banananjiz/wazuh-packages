@@ -324,9 +324,6 @@ installElasticsearch() {
             echo "bootstrap.system_call_filter: false" >> /etc/elasticsearch/elasticsearch.yml
         fi
 
-        # Create certificates
-	logger "Creating Certificates..."
-	progressBar
 
         if [ -n "${single}" ]; then
             createCertificates name ip
@@ -350,6 +347,7 @@ createCertificates() {
 
 
     logger "Creating the certificates..."
+    progressBar
     eval "curl -so ~/search-guard-tlstool-1.8.zip https://maven.search-guard.com/search-guard-tlstool/1.8/search-guard-tlstool-1.8.zip --max-time 300 ${debug}"
     eval "unzip ~/search-guard-tlstool-1.8.zip -d ~/searchguard ${debug}"
     eval "curl -so ~/searchguard/search-guard.yml https://packages.wazuh.com/resources/${WAZUH_MAJOR}/open-distro/unattended-installation/distributed/templates/search-guard-unattended.yml --max-time 300 ${debug}"
