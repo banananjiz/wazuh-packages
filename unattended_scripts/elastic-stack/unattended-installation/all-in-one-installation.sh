@@ -343,7 +343,7 @@ installFilebeat() {
         echo "$conf" > /etc/filebeat/filebeat.yml
         # Start Filebeat
 	logger "Starting Filebeat..."
-	progresBar
+	progressBar
         startService "filebeat"
 
         logger "Done"
@@ -545,7 +545,7 @@ main() {
         installKibana password
         checkInstallation
     else
-	progressBar
+	progressbartotal=17
         healthCheck
         installPrerequisites
         addElasticrepo
