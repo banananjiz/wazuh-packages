@@ -531,9 +531,9 @@ main() {
         if [ -n "$i" ]
         then
             echo "Health-check ignored."
-	    progressbartotal=16
-        else
 	    progressbartotal=17
+        else
+	    progressbartotal=18
             healthCheck
         fi
         installPrerequisites
@@ -545,7 +545,7 @@ main() {
         installKibana password
         checkInstallation
     else
-	progressbartotal=17
+	progressbartotal=18
         healthCheck
         installPrerequisites
         addElasticrepo
