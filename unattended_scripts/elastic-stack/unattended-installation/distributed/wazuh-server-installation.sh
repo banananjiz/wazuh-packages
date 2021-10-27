@@ -108,6 +108,7 @@ checkConfig() {
             eval "apt-get update -q $debug"
         fi
         echo "Certificates file found. Starting the installation..."
+	progressBar
         eval "unzip ~/certs.zip config.yml $debug"
     else
         echo "No certificates file found."
@@ -120,6 +121,7 @@ checkConfig() {
 installPrerequisites() {
 
     logger "Installing all necessary utilities for the installation..."
+    progressBar
 
     if [ $sys_type == "yum" ]
     then
@@ -147,6 +149,7 @@ installPrerequisites() {
 addElasticrepo() {
 
     logger "Adding the Elasticsearch repository..."
+    progressBar
 
     if [ $sys_type == "yum" ]
     then
@@ -187,6 +190,7 @@ addElasticrepo() {
 addWazuhrepo() {
 
     logger "Adding the Wazuh repository..."
+    progressBar
 
     if [ $sys_type == "yum" ]
     then
@@ -226,6 +230,7 @@ addWazuhrepo() {
 installWazuh() {
 
     logger "Installing the Wazuh manager..."
+    progressBar
     if [ $sys_type == "zypper" ]
     then
         eval "zypper -n install wazuh-manager $debug"
@@ -239,6 +244,9 @@ installWazuh() {
     else
         logger "Done"
     fi
+
+    logger "Starting Wazuh Manager..."
+    progressBar
     startService "wazuh-manager"
 
 }
@@ -252,6 +260,7 @@ installFilebeat() {
     fi
 
     logger "Installing Filebeat..."
+    progressBar
 
     if [ $sys_type == "yum" ]
     then
@@ -280,6 +289,9 @@ installFilebeat() {
 }
 
 configureFilebeat() {
+
+    logger "Configuring Filebeat..."
+    progressBar
 
     nh=$(awk -v RS='' '/network.host:/' ~/config.yml)
 
@@ -315,7 +327,9 @@ configureFilebeat() {
     eval "chmod -R 500 /etc/filebeat/certs $debug"
     eval "chmod 400 /etc/filebeat/certs/ca/ca.* /etc/filebeat/certs/filebeat.* $debug"
     logger "Done"
+
     echo "Starting Filebeat..."
+    progressBar
     eval "systemctl daemon-reload $debug"
     eval "systemctl enable filebeat.service $debug"
     eval "systemctl start filebeat.service $debug"
@@ -335,6 +349,7 @@ healthCheck() {
         exit 1;
     else
         echo "Starting the installation..."
+	progressBar
     fi
 
 }
@@ -357,8 +372,24 @@ disableRepos() {
     fi
 }
 
-## Main
+## Progress Bar Utility
+progressBar() {
+    if [ -z ${progress} ]; then 
+	    progress=1
+    fi
+    cols=$(tput cols)
+    cols=$(( $cols-6 ))
+    cols_done=$(( ($progress*$cols) / $progressbartotal ))
+    cols_empty=$(( $cols-$cols_done ))
+    progresspercentage=$(( ($progress*100) / $progressbartotal ))
+    echo -n "["
+    for i in $(seq $cols_done); do echo -n "#"; done
+    for i in $(seq $cols_empty); do echo -n "-"; done
+    printf "]%3.3s%%\n" ${progresspercentage}
+    progress=$(( $progress+1 )) 
+}
 
+## Main
 main() {
 
     if [ -n "$1" ]
@@ -413,8 +444,9 @@ main() {
         if [ -n "$i" ]
         then
             echo "Health-check ignored."
-
+            progressbartotal=9
         else
+	    progressbartotal=10
             healthCheck
         fi
         checkConfig
