@@ -676,9 +676,9 @@ main() {
 
             if [ -n "${ignore}" ]; then
                 echo "Health-check ignored."
-		progressbartotal=8
-            else
 		progressbartotal=9
+            else
+		progressbartotal=10
                 healthCheck elastic
             fi
             checkConfig
@@ -686,20 +686,24 @@ main() {
             addWazuhrepo
             checkNodes
             installElasticsearch iname
+	    logger "Installation finished"
+	    progressBar
         fi
         if [ -n "${kibana}" ]; then
 
             if [ -n "${ignore}" ]; then
                 echo "Health-check ignored."
-		progressbartotal=6
-            else
 		progressbartotal=7
+            else
+		progressbartotal=8
                 healthCheck kibana
             fi
             checkConfig
             installPrerequisites
             addWazuhrepo
             installKibana iname
+	    logger "Installation finished"
+	    progressBar
         fi
     else
         getHelp
