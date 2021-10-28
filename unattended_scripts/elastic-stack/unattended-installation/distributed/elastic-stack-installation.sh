@@ -699,7 +699,6 @@ main() {
             checkNodes
             checkConfig iname
             installElasticsearch iname
-	    progressBar
         fi
         if [ -n "$k" ]
         then
@@ -715,14 +714,15 @@ main() {
             if [ -n "$i" ]
             then
                 echo "Health-check ignored."
-		progressbartotal=5
-            else
-                healthCheck e k
 		progressbartotal=6
+            else
+		progressbartotal=7
+                healthCheck e k
             fi
             installPrerequisites
             addElasticrepo
             installKibana iname
+	    logger "Installation finished"
 	    progressBar
         fi
     else

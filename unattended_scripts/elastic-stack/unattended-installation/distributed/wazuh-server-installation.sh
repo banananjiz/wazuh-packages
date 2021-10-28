@@ -444,9 +444,9 @@ main() {
         if [ -n "$i" ]
         then
             echo "Health-check ignored."
-            progressbartotal=9
+            progressbartotal=10
         else
-	    progressbartotal=10
+	    progressbartotal=11
             healthCheck
         fi
         checkConfig
@@ -456,6 +456,8 @@ main() {
         installWazuh
         installFilebeat iname
         configureFilebeat iname password
+	logger "Installation finished"
+	progressBar
     else
         getHelp
     fi

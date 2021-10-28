@@ -439,7 +439,6 @@ initializeElastic() {
     fi
 
     logger "Done"
-    exit 0;
 }
 
 ## Kibana
@@ -688,14 +687,15 @@ main() {
             installElasticsearch iname
 	    logger "Installation finished"
 	    progressBar
+	    exit 0
         fi
         if [ -n "${kibana}" ]; then
 
             if [ -n "${ignore}" ]; then
                 echo "Health-check ignored."
-		progressbartotal=7
-            else
 		progressbartotal=8
+            else
+		progressbartotal=9
                 healthCheck kibana
             fi
             checkConfig
